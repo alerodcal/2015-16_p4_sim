@@ -28,9 +28,6 @@ public:
   // Función que envía un paquete.
   void EnviaPaquete();
 
-  // Función que obtiene el total de paquetes correctamente recibidos por el receptor.
-  uint32_t TotalDatos();
-
 private:
   // Método de inicialización de la aplicación.
   // Se llama sólo una vez al inicio.
@@ -71,8 +68,6 @@ private:
   uint8_t        m_tx;
   // Evento de retransmision
   EventId        m_temporizador;
-  // Acumulador de paquetes bien asentidos.
-  int            m_totalPqt;
   // Paquete a enviar (debe guardarse por si hay retransmisiones
   Ptr<Packet>    m_paquete;
 };

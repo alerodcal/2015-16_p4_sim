@@ -20,7 +20,7 @@ BitAlternanteTx::BitAlternanteTx(Ptr<NetDevice> disp,
   m_esperaACK = espera;
   m_tamPqt    = tamPqt;
   m_tx        = 0;
-  m_totalPqt  = 0;   
+ 
 }
 
 
@@ -52,8 +52,7 @@ BitAlternanteTx::ACKRecibido(Ptr<NetDevice>        receptor,
       m_temporizador.Cancel();
       // Cambiamos el número de secuencia
       m_tx = 1 - m_tx;
-      // Incrementamos el total de paquetes
-      m_totalPqt++;
+      
       // Se transmite un nuevo paquete
       // Formamos el paquete
       m_paquete = Create<Packet> (&m_tx, m_tamPqt + 1);
@@ -94,17 +93,6 @@ BitAlternanteTx::EnviaPaquete()
   if (m_esperaACK != 0)
     m_temporizador=Simulator::Schedule(m_esperaACK,&BitAlternanteTx::VenceTemporizador,this);
 }
-
-
-uint32_t
-BitAlternanteTx::TotalDatos()
-{
-  // Devuelvo el total de paquetes enviados
-  return m_totalPqt;
-}
-
-
-
 
 
 BitAlternanteRx::BitAlternanteRx(Ptr<NetDevice> disp)
