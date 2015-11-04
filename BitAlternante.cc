@@ -11,7 +11,8 @@ NS_LOG_COMPONENT_DEFINE ("BitAlternante");
 
 BitAlternanteTx::BitAlternanteTx(Ptr<NetDevice> disp,
                                  Time           espera,
-                                 uint32_t       tamPqt)
+                                 uint32_t       tamPqt,
+                                 uint8_t        tamTx)
 {
   NS_LOG_FUNCTION (disp << espera << tamPqt);
 
@@ -19,8 +20,10 @@ BitAlternanteTx::BitAlternanteTx(Ptr<NetDevice> disp,
   m_disp      = disp;
   m_esperaACK = espera;
   m_tamPqt    = tamPqt;
+  m_tamTx     = tamTx;
   m_tx        = 0;
- 
+  m_ventIni   = 0;
+
 }
 
 

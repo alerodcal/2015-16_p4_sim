@@ -65,7 +65,14 @@ private:
   // Tamaño del paquete
   uint32_t       m_tamPqt;
   // Número de secuencia de los paquetes a transmitir
+  // (V(S) en el estandar)
   uint8_t        m_tx;
+  // Indica el numero de secuencia inicial de la ventana
+  // (V(A) en el estandar)
+  uint8_t        m_ventIni;
+  // Tamaño de la vetana de transmision
+  // (k en el estandar)
+  uint8_t        m_tamTx
   // Evento de retransmision
   EventId        m_temporizador;
   // Paquete a enviar (debe guardarse por si hay retransmisiones
@@ -107,5 +114,6 @@ private:
   // Dispositivo de red con el que hay que comunicarse.
   Ptr<NetDevice> m_disp;
   // Número de secuencia de los paquetes a recibir
+  // (V(R) en el estandar)
   uint8_t        m_rx;
 };
