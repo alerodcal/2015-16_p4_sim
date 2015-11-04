@@ -5,6 +5,7 @@ using namespace ns3;
 #include "ns3/node.h"
 #include "ns3/net-device.h"
 #include "ns3/application.h"
+#include "ns3/header.h"
 
 class BitAlternanteTx : public Application
 {
@@ -46,10 +47,11 @@ private:
   // Método que se llama en el instante de comienzo de la aplicación.
   void StartApplication()
   {
-    // Formamos el primer paquete
-    m_paquete = Create<Packet> (&m_tx, m_tamPqt + 1);
-    // Y lo enviamos
-    EnviaPaquete();
+    for (m_tx = m_ventIni; m_tx != m_ventIni + m_tamTx; m_tx++)
+    {
+     // Se reenvia un paquete
+     EnviaPaquete();
+    }
   }
 
   // Método que se llama en el instante de final de la aplicación.
@@ -72,11 +74,13 @@ private:
   uint8_t        m_ventIni;
   // Tamaño de la vetana de transmision
   // (k en el estandar)
-  uint8_t        m_tamTx
+  uint8_t        m_tamTx;
   // Evento de retransmision
   EventId        m_temporizador;
   // Paquete a enviar (debe guardarse por si hay retransmisiones
   Ptr<Packet>    m_paquete;
+  //Total de paquetes transmitidos
+  int            m_totalPqt;
 };
 
 
@@ -116,4 +120,6 @@ private:
   // Número de secuencia de los paquetes a recibir
   // (V(R) en el estandar)
   uint8_t        m_rx;
+  //Total de paquetes ACK transmitidos
+  int            m_totalPqtACK;
 };

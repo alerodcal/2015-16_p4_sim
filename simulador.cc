@@ -18,7 +18,7 @@ main (int argc, char *argv[])
   Time::SetResolution (Time::US);
 
   // Parámetros de la simulación
-  Time     trtx       = Time("5ms");
+  Time     trtx       = Time("100ms");
   uint32_t tamPaquete = 994;
   Time     rprop      = Time("2ms");
   DataRate vtx        = DataRate("1000kbps");
@@ -49,7 +49,8 @@ main (int argc, char *argv[])
   // Activamos el transmisor
   transmisor.SetStartTime (Seconds (1.0));
   transmisor.SetStopTime (Seconds (9.95));
-  
+  NS_LOG_DEBUG("Antes de simular");
+
   Simulator::Run ();
   Simulator::Destroy ();
 
