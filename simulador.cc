@@ -5,7 +5,6 @@
 #include <ns3/data-rate.h>
 #include <ns3/error-model.h>
 #include <ns3/random-variable-stream.h>
-#include <ns3/error-model.h>
 #include <ns3/point-to-point-net-device.h>
 #include "Enlace.h"
 #include "Observador.h"
@@ -58,7 +57,7 @@ main (int argc, char *argv[])
   Observador observador;
   // Suscribimos la traza de paquetes correctamente asentidos.
   dispositivos.Get (0)->TraceConnectWithoutContext ("MacRx", MakeCallback(&Observador::PaqueteAsentido, &observador));
-  dispositivos.Get (1)->GetObject<PointToPointNetDevice>()->TraceConnectWithoutContext ("PhyRxDrop", MakeCallback(&Observador::PaqueteErroneo, &observador));
+  dispositivos.Get (1)->TraceConnectWithoutContext ("PhyRxDrop", MakeCallback(&Observador::PaqueteErroneo, &observador));
 
   // Añadimos cada aplicación a su nodo
   nodos.Get (0)->AddApplication(&transmisor);
@@ -85,5 +84,6 @@ main (int argc, char *argv[])
   NS_LOG_DEBUG ("Probabilidad de error de bit: " << perror);
   NS_LOG_INFO  ("Total paquetes: " << observador.TotalPaquetes ());
   NS_LOG_INFO  ("Total paquetes erroneos: " << observador.TotalPaquetesErroneos ());
+
   return 0;
 }

@@ -62,7 +62,7 @@ Enlace::ACKRecibido(uint8_t numSecuencia)
   } 
   else
   {
-    NS_LOG_ERROR("Recibido ACK inesperado. Se ha recibido ACK = " << (unsigned int) numSecuencia << 
+    NS_LOG_DEBUG("Recibido ACK inesperado. Se ha recibido ACK = " << (unsigned int) numSecuencia << 
                   " y se esperaba ACK = " << (unsigned int) (m_ventIni+1)%256);
 
     // Desactivamos el temporizador.
@@ -126,7 +126,7 @@ void
 Enlace::VenceTemporizador()
 {
   NS_LOG_FUNCTION_NOARGS ();
-  NS_LOG_ERROR ("Se ha producido una retransmisión. " 
+  NS_LOG_DEBUG ("Se ha producido una retransmisión. " 
     << "Se reenvian los paquetes con numero de secuencia perteneciente al intervalo: ["
     << (unsigned int) (m_ventIni)%256 << "," << (m_ventIni + m_tamTx - 1)%256 << "].");
 
