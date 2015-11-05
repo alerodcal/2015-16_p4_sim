@@ -13,16 +13,16 @@ NS_LOG_COMPONENT_DEFINE ("BitAlternante");
 
 BitAlternanteTx::BitAlternanteTx(Ptr<NetDevice> disp,
                                  Time           espera,
-                                 uint32_t       tamPqt)
-                                 //uint8_t        tamTx)
+                                 uint32_t       tamPqt,
+                                 uint8_t        tamTx)
 {
-  NS_LOG_FUNCTION (disp << espera << tamPqt);
+  NS_LOG_FUNCTION (disp << espera << tamPqt << tamTx);
 
   // Inicializamos las variables privadas
   m_disp      = disp;
   m_esperaACK = espera;
   m_tamPqt    = tamPqt;
-  m_tamTx     = 3;
+  m_tamTx     = tamTx;
   m_tx        = 0;
   m_ventIni   = 0;
   m_totalPqt  = 0;
@@ -49,8 +49,9 @@ BitAlternanteTx::ACKRecibido(Ptr<NetDevice>        receptor,
   copia->RemoveHeader (header);
   uint8_t numSecuencia = header.GetSecuencia();
 
-  NS_LOG_ERROR ("Recibido ACK en nodo " << m_node->GetId() << " con "
-                << (unsigned int) numSecuencia << "ventana inicial" << (unsigned int) (m_ventIni)%256);
+  NS_LOG_DEBUG ("Recibido ACK en nodo " << m_node->GetId() << " con "
+                << (unsigned int) numSecuencia << ". La ventana es [" 
+                << (unsigned int) (m_ventIni)%256 << "," << (m_ventIni + m_tamTx - 1)%256 << "].");
 
   // Comprobamos si el número de secuencia del ACK se corresponde con
   // el de secuencia del siguiente paquete a transmitir
@@ -58,10 +59,13 @@ BitAlternanteTx::ACKRecibido(Ptr<NetDevice>        receptor,
   {
       // Si es correcto desactivo el temporizador
       m_temporizador.Cancel();
-      //Desplazamos la ventana
+      // Desplazamos la ventana
       m_ventIni = m_ventIni + 1;
-      //Si el siguiente numero de secuencia a transmitir
-      //esta dentro de la ventana lo enviamos
+      NS_LOG_DEBUG("La ventana se desliza a [" << (unsigned int) (m_ventIni)%256 
+                    << "," << (m_ventIni + m_tamTx - 1)%256 << "].");
+
+      // Si el siguiente numero de secuencia a transmitir
+      // esta dentro de la ventana lo enviamos
       if(m_tx != m_ventIni + m_tamTx) 
       {
         // Se transmite un nuevo paquete
@@ -72,9 +76,12 @@ BitAlternanteTx::ACKRecibido(Ptr<NetDevice>        receptor,
   } 
   else
   {
-    NS_LOG_ERROR("Recibido ACK inesperado.");
+    NS_LOG_ERROR("Recibido ACK inesperado. Se ha recibido ACK = " << numSecuencia << 
+                  " y se esperaba ACK = " << (m_ventIni+1)%256);
+
+    // Desactivamos el temporizador.
     m_temporizador.Cancel();
-    //Reenviamos todos los paquetes de la ventana.
+    // Reenviamos todos los paquetes de la ventana.
     VenceTemporizador();
   }
 }
@@ -84,7 +91,9 @@ void
 BitAlternanteTx::VenceTemporizador()
 {
   NS_LOG_FUNCTION_NOARGS ();
-  NS_LOG_ERROR ("Se ha producido una retransmisión.");
+  NS_LOG_ERROR ("Se ha producido una retransmisión. " 
+    << "Se reenvian los paquetes con numero de secuencia perteneciente al intervalo: ["
+    << (unsigned int) (m_ventIni)%256 << "," << (m_ventIni + m_tamTx - 1)%256 << "].");
 
   for (m_tx = m_ventIni; m_tx != m_ventIni + m_tamTx; m_tx++)
   {
@@ -154,7 +163,7 @@ BitAlternanteRx::PaqueteRecibido(Ptr<NetDevice>        receptor,
   copia->RemoveHeader (header);
   uint8_t numSecuencia = header.GetSecuencia();
 
-  NS_LOG_ERROR ("Recibido paquete en nodo " << m_node->GetId() << " con "
+  NS_LOG_DEBUG ("Recibido paquete en nodo " << m_node->GetId() << " con "
                 << (unsigned int) numSecuencia);
   // Si el número de secuencia es correcto
 

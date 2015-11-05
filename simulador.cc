@@ -20,8 +20,9 @@ main (int argc, char *argv[])
   // Parámetros de la simulación
   Time     trtx       = Time("100ms");
   uint32_t tamPaquete = 994;
-  Time     rprop      = Time("2ms");
+  Time     rprop      = Time("4ms");
   DataRate vtx        = DataRate("1000kbps");
+  uint8_t  tamVentana = 3;
 
   // Configuramos el escenario:
   PointToPointHelper escenario;
@@ -39,7 +40,7 @@ main (int argc, char *argv[])
   dispositivos.Get (0)->TraceConnectWithoutContext ("MacRx", MakeCallback(&Observador::PaqueteAsentido, &observador));
 
   // Una aplicación transmisora
-  BitAlternanteTx transmisor (dispositivos.Get (1), trtx, tamPaquete);
+  BitAlternanteTx transmisor (dispositivos.Get (1), trtx, tamPaquete, tamVentana);
   // Y una receptora
   BitAlternanteRx receptor(dispositivos.Get (0));
   // Añadimos cada aplicación a su nodo
