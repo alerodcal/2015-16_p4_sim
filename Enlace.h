@@ -7,27 +7,38 @@ using namespace ns3;
 #include "ns3/application.h"
 #include "ns3/header.h"
 
-class BitAlternanteTx : public Application
+class Enlace : public Application
 {
 public:
 
   // Constructor de la clase. Necesita como parámetros el puntero al dispositivo de red
   // con el que debe comunicarse, el temporizador de retransmisiones y el tamaño de
   // paquete. Inicializa las variables privadas.
-  BitAlternanteTx(Ptr<NetDevice>, Time, uint32_t tamPqt, uint8_t tamTx);
+  Enlace(Ptr<NetDevice>, Time, uint32_t tamPqt, uint8_t tamTx);
+
+  // Función para el procesamiento de paquetes recibidos
+  // Comprueba si el ACK es el adecuado. Si lo es, desactiva el temporizador de
+  // retransmisiones, actualiza el valor de la ventana y envía un nuevo paquete.
+  void PaqueteRecibido(Ptr<NetDevice> receptor, Ptr<const Packet> recibido,
+                       uint16_t protocolo, const Address &desde, const Address &hacia,
+                       NetDevice::PacketType tipoPaquete);
+
+  // Función para el procesamiento de paquetes recibidos de tipo datos.
+  void DatoRecibido (uint8_t numSecuencia);
 
   // Función para el procesamiento de asentimientos recibidos.
   // Comprueba si el ACK es el adecuado. Si lo es, desactiva el temporizador de
   // retransmisiones, actualiza el valor de la ventana y envía un nuevo paquete.
-  void ACKRecibido(Ptr<NetDevice> receptor, Ptr<const Packet> recibido,
-                   uint16_t protocolo, const Address &desde, const Address &hacia,
-                   NetDevice::PacketType tipoPaquete);
+  void ACKRecibido(uint8_t numSecuencia);
 
   // Función de vencimiento del temporizador
   void VenceTemporizador ();
   
   // Función que envía un paquete.
   void EnviaPaquete();
+
+  // Función que envía un paquete.
+  void EnviaACK();
 
 private:
   // Método de inicialización de la aplicación.
@@ -38,7 +49,7 @@ private:
   {
     // Solicitamos que nos entreguen (mediante la llamada a ACKRecibido)
     // cualquier paquete que llegue al nodo.
-    m_node->RegisterProtocolHandler (ns3::MakeCallback(&BitAlternanteTx::ACKRecibido,
+    m_node->RegisterProtocolHandler (ns3::MakeCallback(&Enlace::PaqueteRecibido,
                                                        this),
                                      0x0000, 0, false);
     Application::DoInitialize();
@@ -69,6 +80,9 @@ private:
   // Número de secuencia de los paquetes a transmitir
   // (V(S) en el estandar)
   uint8_t        m_tx;
+  // Número de secuencia de los paquetes a recibir
+  // (V(R) en el estandar)
+  uint8_t        m_rx;
   // Indica el numero de secuencia inicial de la ventana
   // (V(A) en el estandar)
   uint8_t        m_ventIni;
@@ -81,45 +95,6 @@ private:
   Ptr<Packet>    m_paquete;
   //Total de paquetes transmitidos
   int            m_totalPqt;
-};
-
-
-class BitAlternanteRx : public Application
-{
-public:
-
-  // Constructor de la clase. Necesita como parámetro el puntero al dispositivo
-  // de red con el que debe comunicarse.
-  BitAlternanteRx(Ptr<NetDevice>);
-
-  // Función para el procesamiento de paquetes recibidos
-  // Comprueba si el ACK es el adecuado. Si lo es, desactiva el temporizador de
-  // retransmisiones, actualiza el valor de la ventana y envía un nuevo paquete.
-  void PaqueteRecibido(Ptr<NetDevice> receptor, Ptr<const Packet> recibido,
-                       uint16_t protocolo, const Address &desde, const Address &hacia,
-                       NetDevice::PacketType tipoPaquete);
-
-  // Función que envía un paquete.
-  void EnviaACK();
-
-private:
-
-  // Método de inicialización de la aplicación. Instala el callback.
-  void DoInitialize()
-  {
-    // Solicitamos que nos entreguen (mediante la llamada a PaqueteRecibido)
-    // cualquier paquete que llegue al nodo.
-    m_node->RegisterProtocolHandler
-      (ns3::MakeCallback(&BitAlternanteRx::PaqueteRecibido,
-                         this), 0x0000, 0, false);
-    Application::DoInitialize();
-  };
-
-  // Dispositivo de red con el que hay que comunicarse.
-  Ptr<NetDevice> m_disp;
-  // Número de secuencia de los paquetes a recibir
-  // (V(R) en el estandar)
-  uint8_t        m_rx;
   //Total de paquetes ACK transmitidos
   int            m_totalPqtACK;
 };
