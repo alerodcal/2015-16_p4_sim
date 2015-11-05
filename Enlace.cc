@@ -3,15 +3,15 @@
 #include <ns3/core-module.h>
 #include <ns3/callback.h>
 #include <ns3/packet.h>
-#include "BitAlternante.h"
+#include "Enlace.h"
 #include "CabEnlace.h"
 
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("BitAlternante");
+NS_LOG_COMPONENT_DEFINE ("Enlace");
 
-BitAlternanteTx::BitAlternanteTx(Ptr<NetDevice> disp,
+Enlace::Enlace(Ptr<NetDevice> disp,
                                  Time           espera,
                                  uint32_t       tamPqt,
                                  uint8_t        tamTx)
@@ -24,34 +24,20 @@ BitAlternanteTx::BitAlternanteTx(Ptr<NetDevice> disp,
   m_tamPqt    = tamPqt;
   m_tamTx     = tamTx;
   m_tx        = 0;
+  m_rx        = 0;
   m_ventIni   = 0;
   m_totalPqt  = 0;
+  m_totalPqtACK = 0;
 }
 
-
-
 void
-BitAlternanteTx::ACKRecibido(Ptr<NetDevice>        receptor,
-                             Ptr<const Packet>     recibido,
-                             uint16_t              protocolo,
-                             const Address &       desde,
-                             const Address &       hacia,
-                             NetDevice::PacketType tipoPaquete)
+Enlace::ACKRecibido(uint8_t numSecuencia)
 {
-  NS_LOG_FUNCTION (receptor << recibido->GetSize () <<
-                   std::hex << protocolo <<
-                   desde << hacia << tipoPaquete);
-  
-  // Obtengo el valor del número de secuecia
-  Ptr<Packet> copia = recibido->Copy();
-
-  CabEnlace header;
-  copia->RemoveHeader (header);
-  uint8_t numSecuencia = header.GetSecuencia();
+  NS_LOG_FUNCTION (numSecuencia);
 
   NS_LOG_DEBUG ("Recibido ACK en nodo " << m_node->GetId() << " con "
                 << (unsigned int) numSecuencia << ". La ventana es [" 
-                << (unsigned int) (m_ventIni)%256 << "," << (m_ventIni + m_tamTx - 1)%256 << "].");
+                << (unsigned int) (m_ventIni)%256 << "," << (unsigned int) (m_ventIni + m_tamTx - 1)%256 << "].");
 
   // Comprobamos si el número de secuencia del ACK se corresponde con
   // el de secuencia del siguiente paquete a transmitir
@@ -62,22 +48,22 @@ BitAlternanteTx::ACKRecibido(Ptr<NetDevice>        receptor,
       // Desplazamos la ventana
       m_ventIni = m_ventIni + 1;
       NS_LOG_DEBUG("La ventana se desliza a [" << (unsigned int) (m_ventIni)%256 
-                    << "," << (m_ventIni + m_tamTx - 1)%256 << "].");
+                    << "," << (unsigned int) (m_ventIni + m_tamTx - 1)%256 << "].");
 
       // Si el siguiente numero de secuencia a transmitir
       // esta dentro de la ventana lo enviamos
       if(m_tx != m_ventIni + m_tamTx) 
       {
         // Se transmite un nuevo paquete
-        EnviaPaquete();
+        EnviaPaqueteDatos();
         // Cambiamos el número de secuencia
         m_tx = m_tx + 1;
       }
   } 
   else
   {
-    NS_LOG_ERROR("Recibido ACK inesperado. Se ha recibido ACK = " << numSecuencia << 
-                  " y se esperaba ACK = " << (m_ventIni+1)%256);
+    NS_LOG_ERROR("Recibido ACK inesperado. Se ha recibido ACK = " << (unsigned int) numSecuencia << 
+                  " y se esperaba ACK = " << (unsigned int) (m_ventIni+1)%256);
 
     // Desactivamos el temporizador.
     m_temporizador.Cancel();
@@ -86,9 +72,58 @@ BitAlternanteTx::ACKRecibido(Ptr<NetDevice>        receptor,
   }
 }
 
+void
+Enlace::DatoRecibido(uint8_t numSecuencia)
+{
+  NS_LOG_FUNCTION (numSecuencia);
+
+  NS_LOG_DEBUG ("Recibido paquete en nodo " << m_node->GetId() << " con "
+                << (unsigned int) numSecuencia);
+
+  if (numSecuencia == m_rx) 
+    // Los numeros de secuencia estaran en el rango
+    // 0-255 y cuando llegue a 255 desbordara y se pondra a 0.
+    m_rx = m_rx+1;
+  // Transmito en cualquier caso un ACK
+  EnviaACK();
+}
+
+void 
+Enlace::PaqueteRecibido(Ptr<NetDevice>        receptor,
+                             Ptr<const Packet>     recibido,
+                             uint16_t              protocolo,
+                             const Address &       desde,
+                             const Address &       hacia,
+                             NetDevice::PacketType tipoPaquete)
+{
+  NS_LOG_FUNCTION (receptor << recibido->GetSize () <<
+                   std::hex << protocolo <<
+                   desde << hacia << tipoPaquete);
+
+  // Obtengo una copia del paquete
+  Ptr<Packet> copia = recibido->Copy();
+
+  CabEnlace header;
+  // Quitamos la cabecera del paquete y la guardamos en header.
+  copia->RemoveHeader (header);
+  // Obtenemos el tipo y el numero de secuencia.
+  uint8_t tipo = header.GetTipo();
+  uint8_t numSecuencia = header.GetSecuencia();
+
+  if (tipo == 0)
+  {
+    // Paquete de datos recibido.
+    DatoRecibido(numSecuencia);
+  } 
+  else 
+  {
+    // Paquete de ACK recibido
+    ACKRecibido(numSecuencia);
+  }
+}
 
 void
-BitAlternanteTx::VenceTemporizador()
+Enlace::VenceTemporizador()
 {
   NS_LOG_FUNCTION_NOARGS ();
   NS_LOG_ERROR ("Se ha producido una retransmisión. " 
@@ -98,13 +133,13 @@ BitAlternanteTx::VenceTemporizador()
   for (m_tx = m_ventIni; m_tx != m_ventIni + m_tamTx; m_tx++)
   {
     // Se reenvia un paquete
-    EnviaPaquete();
+    EnviaPaqueteDatos();
   }
 }
 
 
 void
-BitAlternanteTx::EnviaPaquete()
+Enlace::EnviaPaqueteDatos()
 {
   NS_LOG_FUNCTION_NOARGS ();
 
@@ -130,55 +165,11 @@ BitAlternanteTx::EnviaPaquete()
 
   // Programo el temporizador si no esta ya en marcha
   if (m_esperaACK != 0 && m_temporizador.IsRunning() == false)
-    m_temporizador=Simulator::Schedule(m_esperaACK,&BitAlternanteTx::VenceTemporizador,this);
+    m_temporizador=Simulator::Schedule(m_esperaACK,&Enlace::VenceTemporizador,this);
 }
-
-
-BitAlternanteRx::BitAlternanteRx(Ptr<NetDevice> disp)
-{
-  NS_LOG_FUNCTION (disp);
-
-  m_disp = disp;
-  m_rx   = 0;
-  m_totalPqtACK = 0;
-}
-
 
 void
-BitAlternanteRx::PaqueteRecibido(Ptr<NetDevice>        receptor,
-                                 Ptr<const Packet>     recibido,
-                                 uint16_t              protocolo,
-                                 const Address &       desde,
-                                 const Address &       hacia,
-                                 NetDevice::PacketType tipoPaquete)
-{
-  NS_LOG_FUNCTION (receptor << recibido->GetSize () <<
-                   std::hex << protocolo <<
-                   desde << hacia << tipoPaquete);
-
-  // Obtengo el valor del número de secuecia
-  Ptr<Packet> copia = recibido->Copy();
-
-  CabEnlace header;
-  copia->RemoveHeader (header);
-  uint8_t numSecuencia = header.GetSecuencia();
-
-  NS_LOG_DEBUG ("Recibido paquete en nodo " << m_node->GetId() << " con "
-                << (unsigned int) numSecuencia);
-  // Si el número de secuencia es correcto
-
-  if (numSecuencia == m_rx) 
-    // Si es correcto, cambio el bit
-    // Los numeros de secuencia estaran en el rango
-    // 0-255 y cuando llegue a 255 desbordara y se pondra a 0.
-    m_rx = m_rx+1;
-  // Transmito en cualquier caso un ACK
-  EnviaACK();
-}
-
-
-void
-BitAlternanteRx::EnviaACK()
+Enlace::EnviaACK()
 {
   NS_LOG_FUNCTION_NOARGS ();
   Ptr<Packet> p = Create<Packet> (1);

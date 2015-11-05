@@ -4,7 +4,7 @@
 #include <ns3/point-to-point-helper.h>
 #include <ns3/data-rate.h>
 #include <ns3/error-model.h>
-#include "BitAlternante.h"
+#include "Enlace.h"
 #include "Observador.h"
 
 using namespace ns3;
@@ -38,27 +38,33 @@ main (int argc, char *argv[])
   Observador observador;
   // Suscribimos la traza de paquetes correctamente asentidos.
   dispositivos.Get (0)->TraceConnectWithoutContext ("MacRx", MakeCallback(&Observador::PaqueteAsentido, &observador));
+  dispositivos.Get (0)->TraceConnectWithoutContext ("PhyRxDrop", MakeCallback(&Observador::PaqueteErroneo, &observador));
 
-  // Una aplicación transmisora
-  BitAlternanteTx transmisor (dispositivos.Get (1), trtx, tamPaquete, tamVentana);
-  // Y una receptora
-  BitAlternanteRx receptor(dispositivos.Get (0));
+  // Una aplicación transmisora (que tambien recibira)
+  Enlace transmisor (dispositivos.Get (1), trtx, tamPaquete, tamVentana);
+  // Y una receptora (que tambien enviara)
+  Enlace receptor (dispositivos.Get (0), trtx, tamPaquete, tamVentana);
   // Añadimos cada aplicación a su nodo
   nodos.Get (0)->AddApplication(&transmisor);
   nodos.Get (1)->AddApplication(&receptor);
 
+  //Añadimos una salida a pcap
+  escenario.EnablePcap("ppractica04", dispositivos.Get(0));
+
   // Activamos el transmisor
   transmisor.SetStartTime (Seconds (1.0));
   transmisor.SetStopTime (Seconds (9.95));
-  NS_LOG_DEBUG("Antes de simular");
+  // Activamos el transmisor
+  receptor.SetStartTime (Seconds (1.0));
+  receptor.SetStopTime (Seconds (9.95));
 
   Simulator::Run ();
   Simulator::Destroy ();
 
-  NS_LOG_DEBUG ("TamPaquete: " << tamPaquete + 6);
+  NS_LOG_DEBUG ("TamPaquete: " << tamPaquete + 8);
   NS_LOG_DEBUG ("Vtx: " << vtx);
   NS_LOG_DEBUG ("Rprop: " << rprop);
-  NS_LOG_DEBUG ("RTT: " << vtx.CalculateTxTime (tamPaquete + 6) + 2 * rprop);
+  NS_LOG_DEBUG ("RTT: " << Seconds(vtx.CalculateTxTime (tamPaquete + 8)) + 2 * rprop);
   NS_LOG_DEBUG ("Temporizador: " << trtx);
   NS_LOG_INFO  ("Total paquetes: " << observador.TotalPaquetes ());
   

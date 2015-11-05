@@ -16,13 +16,6 @@ public:
   // paquete. Inicializa las variables privadas.
   Enlace(Ptr<NetDevice>, Time, uint32_t tamPqt, uint8_t tamTx);
 
-  // Función para el procesamiento de paquetes recibidos
-  // Comprueba si el ACK es el adecuado. Si lo es, desactiva el temporizador de
-  // retransmisiones, actualiza el valor de la ventana y envía un nuevo paquete.
-  void PaqueteRecibido(Ptr<NetDevice> receptor, Ptr<const Packet> recibido,
-                       uint16_t protocolo, const Address &desde, const Address &hacia,
-                       NetDevice::PacketType tipoPaquete);
-
   // Función para el procesamiento de paquetes recibidos de tipo datos.
   void DatoRecibido (uint8_t numSecuencia);
 
@@ -31,11 +24,18 @@ public:
   // retransmisiones, actualiza el valor de la ventana y envía un nuevo paquete.
   void ACKRecibido(uint8_t numSecuencia);
 
+  // Función para el procesamiento de paquetes recibidos
+  // Comprueba si el ACK es el adecuado. Si lo es, desactiva el temporizador de
+  // retransmisiones, actualiza el valor de la ventana y envía un nuevo paquete.
+  void PaqueteRecibido(Ptr<NetDevice> receptor, Ptr<const Packet> recibido,
+                       uint16_t protocolo, const Address &desde, const Address &hacia,
+                       NetDevice::PacketType tipoPaquete);
+
   // Función de vencimiento del temporizador
   void VenceTemporizador ();
   
   // Función que envía un paquete.
-  void EnviaPaquete();
+  void EnviaPaqueteDatos();
 
   // Función que envía un paquete.
   void EnviaACK();
@@ -61,7 +61,7 @@ private:
     for (m_tx = m_ventIni; m_tx != m_ventIni + m_tamTx; m_tx++)
     {
      // Se reenvia un paquete
-     EnviaPaquete();
+     EnviaPaqueteDatos();
     }
   }
 

@@ -10,8 +10,11 @@ class Observador
 public:
   Observador  ();
   void     PaqueteAsentido (Ptr<const Packet> paquete);
-  uint32_t TotalPaquetes   ();
+  uint64_t TotalPaquetes   ();
+  void     PaqueteErroneo (Ptr<const Packet> paquete);
+  uint64_t TotalPaquetesErroneos   ();
 
 private:
   uint64_t m_paquetes;
+  uint64_t m_paquetesError;
 };
