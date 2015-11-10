@@ -7,6 +7,9 @@ using namespace ns3;
 #include "ns3/application.h"
 #include "ns3/header.h"
 
+// Rango de numeración de la secuencia
+#define MODULO 256
+
 class Enlace : public Application
 {
 public:
@@ -58,11 +61,12 @@ private:
   // Método que se llama en el instante de comienzo de la aplicación.
   void StartApplication()
   {
-    for (m_tx = m_ventIni; m_tx != m_ventIni + m_tamTx; m_tx++)
-    {
+    // ESTE BUCLE SE REALIZA EN EnviaPaqueteDatos()
+    //for (m_tx = m_ventIni; m_tx != m_ventIni + m_tamTx; m_tx++)
+    //{
      // Se reenvia un paquete
      EnviaPaqueteDatos();
-    }
+    //}
   }
 
   // Método que se llama en el instante de final de la aplicación.
@@ -70,6 +74,9 @@ private:
   {
     Simulator::Stop ();
   }
+
+  // Calcula valor referido al extremo izquierdo de la ventana
+  uint32_t Offset    (uint32_t valor);
 
   // Dispositivo de red con el que hay que comunicarse.
   Ptr<NetDevice> m_disp;
