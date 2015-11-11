@@ -20,7 +20,7 @@ main (int argc, char *argv[])
   Time::SetResolution (Time::US);
 
   // Parámetros de la simulación
-  Time     trtx       = Time("100ms");
+  Time     trtx       = Time("17ms");
   uint32_t tamPaquete = 994;
   Time     rprop      = Time("4ms");
   DataRate vtx        = DataRate("1000kbps");
