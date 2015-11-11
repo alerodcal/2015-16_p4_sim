@@ -99,6 +99,7 @@ private:
   // Evento de retransmision
   EventId        m_temporizador;
   // Paquete a enviar (debe guardarse por si hay retransmisiones
+  // YA NO ES NECESARIO
   Ptr<Packet>    m_paquete;
   // Total de paquetes transmitidos
   int            m_totalPqt;
