@@ -134,7 +134,6 @@ Enlace::EnviaPaqueteDatos()
 {
   NS_LOG_FUNCTION_NOARGS ();
 
-  NS_LOG_DEBUG(m_ventanaTx.Credito());
   while (m_ventanaTx.Credito() > 0)
   {
     Ptr<Packet> paquete = Create<Packet> (m_tamPqt);
