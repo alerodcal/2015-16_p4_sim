@@ -7,6 +7,7 @@
 #include "CabEnlace.h"
 
 
+
 using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("Enlace");
@@ -14,7 +15,7 @@ NS_LOG_COMPONENT_DEFINE ("Enlace");
 Enlace::Enlace(Ptr<NetDevice> disp,
                                  Time           espera,
                                  uint32_t       tamPqt,
-                                 uint8_t        tamTx)
+                                 uint8_t        tamTx):m_ventanaTx(tamTx,RANGO)
 {
   NS_LOG_FUNCTION (disp << espera << tamPqt << tamTx);
 
@@ -37,18 +38,18 @@ Enlace::ACKRecibido(uint8_t numSecuencia)
 
   NS_LOG_DEBUG ("Recibido ACK en nodo " << m_node->GetId() << " con "
                 << (unsigned int) numSecuencia << ". La ventana es [" 
-                << (unsigned int) (m_ventIni)%256 << "," << (unsigned int) (m_ventIni + m_tamTx - 1)%256 << "].");
+                << (unsigned int) (m_ventIni)%RANGO << "," << (unsigned int) (m_ventIni + m_tamTx - 1)%RANGO << "].");
 
   // Comprobamos si el número de secuencia del ACK se corresponde con
   // el de secuencia del siguiente paquete a transmitir
-  if(numSecuencia == (m_ventIni + 1)%256)
+  if(numSecuencia == (m_ventIni + 1)%RANGO)
   {
       // Si es correcto desactivo el temporizador
       m_temporizador.Cancel();
       // Desplazamos la ventana
       m_ventIni = m_ventIni + 1;
-      NS_LOG_DEBUG("La ventana se desliza a [" << (unsigned int) (m_ventIni)%256 
-                    << "," << (unsigned int) (m_ventIni + m_tamTx - 1)%256 << "].");
+      NS_LOG_DEBUG("La ventana se desliza a [" << (unsigned int) (m_ventIni)%RANGO 
+                    << "," << (unsigned int) (m_ventIni + m_tamTx - 1)%RANGO << "].");
 
       // Si el siguiente numero de secuencia a transmitir
       // esta dentro de la ventana lo enviamos
@@ -63,7 +64,7 @@ Enlace::ACKRecibido(uint8_t numSecuencia)
   else
   {
     NS_LOG_DEBUG("Recibido ACK inesperado. Se ha recibido ACK = " << (unsigned int) numSecuencia << 
-                  " y se esperaba ACK = " << (unsigned int) (m_ventIni+1)%256);
+                  " y se esperaba ACK = " << (unsigned int) (m_ventIni+1)%RANGO);
 
     // Desactivamos el temporizador.
     m_temporizador.Cancel();
@@ -128,7 +129,7 @@ Enlace::VenceTemporizador()
   NS_LOG_FUNCTION_NOARGS ();
   NS_LOG_DEBUG ("Se ha producido una retransmisión. " 
     << "Se reenvian los paquetes con numero de secuencia perteneciente al intervalo: ["
-    << (unsigned int) (m_ventIni)%256 << "," << (m_ventIni + m_tamTx - 1)%256 << "].");
+    << (unsigned int) (m_ventIni)%RANGO << "," << (m_ventIni + m_tamTx - 1)%RANGO << "].");
 
   for (m_tx = m_ventIni; m_tx != m_ventIni + m_tamTx; m_tx++)
   {

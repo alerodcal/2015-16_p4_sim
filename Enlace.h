@@ -6,6 +6,9 @@ using namespace ns3;
 #include "ns3/net-device.h"
 #include "ns3/application.h"
 #include "ns3/header.h"
+#include "Ventana.h"
+
+#define RANGO 256
 
 class Enlace : public Application
 {
@@ -93,8 +96,10 @@ private:
   EventId        m_temporizador;
   // Paquete a enviar (debe guardarse por si hay retransmisiones
   Ptr<Packet>    m_paquete;
-  //Total de paquetes transmitidos
+  // Total de paquetes transmitidos
   int            m_totalPqt;
-  //Total de paquetes ACK transmitidos
+  // Total de paquetes ACK transmitidos
   int            m_totalPqtACK;
+  // Objeto para simular el comportamiento de la ventana.
+  Ventana m_ventanaTx;
 };
