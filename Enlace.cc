@@ -15,10 +15,14 @@ NS_LOG_COMPONENT_DEFINE ("Enlace");
 Enlace::Enlace(Ptr<NetDevice> disp,
                                  Time           espera,
                                  uint32_t       tamPqt,
-                                 uint8_t        tamTx):m_ventanaTx(tamTx,RANGO)
+                                 uint8_t        tamTx):m_ventanaTx(tamTx,(uint32_t)RANGO)
 {
   NS_LOG_FUNCTION (disp << espera << tamPqt << tamTx);
-
+  //
+  //
+  // QUITAR LAS VARIABLES INUTILES DEBIDO A VENTANA.H
+  //
+  //
   // Inicializamos las variables privadas
   m_disp      = disp;
   m_esperaACK = espera;
@@ -32,51 +36,36 @@ Enlace::Enlace(Ptr<NetDevice> disp,
 }
 
 void
-Enlace::ACKRecibido(uint8_t numSecuencia)
+Enlace::ACKRecibido(uint32_t numSecuencia)
 {
-  NS_LOG_FUNCTION (numSecuencia);
+  NS_LOG_FUNCTION ((unsigned int)numSecuencia);
 
-  NS_LOG_DEBUG ("Recibido ACK en nodo " << m_node->GetId() << " con "
-                << (unsigned int) numSecuencia << ". La ventana es [" 
-                << (unsigned int) (m_ventIni)%RANGO << "," << (unsigned int) (m_ventIni + m_tamTx - 1)%RANGO << "].");
+  //ESTE LOG HAY QUE MODIFICARLO
+  //NS_LOG_DEBUG ("Recibido ACK en nodo " << m_node->GetId() << " con "
+  //              << (unsigned int) numSecuencia << ". La ventana es [" 
+  //              << (unsigned int) (m_ventIni)%RANGO << "," << (unsigned int) (m_ventIni + m_tamTx - 1)%RANGO << "].");
 
   // Comprobamos si el número de secuencia del ACK se corresponde con
   // el de secuencia del siguiente paquete a transmitir
-  if(numSecuencia == (m_ventIni + 1)%RANGO)
+  if(m_ventanaTx.EnVentana((numSecuencia-1)%RANGO))
   {
       // Si es correcto desactivo el temporizador
       m_temporizador.Cancel();
       // Desplazamos la ventana
-      m_ventIni = m_ventIni + 1;
-      NS_LOG_DEBUG("La ventana se desliza a [" << (unsigned int) (m_ventIni)%RANGO 
-                    << "," << (unsigned int) (m_ventIni + m_tamTx - 1)%RANGO << "].");
+      m_ventanaTx.Asentida(numSecuencia);
+      //ESTE LOG HAY QUE CAMBIARLO
+      //NS_LOG_DEBUG("La ventana se desliza a [" << (unsigned int) (m_ventIni)%RANGO 
+      //              << "," << (unsigned int) (m_ventIni + m_tamTx - 1)%RANGO << "].");
 
-      // Si el siguiente numero de secuencia a transmitir
-      // esta dentro de la ventana lo enviamos
-      if(m_tx != m_ventIni + m_tamTx) 
-      {
-        // Se transmite un nuevo paquete
-        EnviaPaqueteDatos();
-        // Cambiamos el número de secuencia
-        m_tx = m_tx + 1;
-      }
+      // Se transmite un nuevo paquete
+      EnviaPaqueteDatos();
   } 
-  else
-  {
-    NS_LOG_DEBUG("Recibido ACK inesperado. Se ha recibido ACK = " << (unsigned int) numSecuencia << 
-                  " y se esperaba ACK = " << (unsigned int) (m_ventIni+1)%RANGO);
-
-    // Desactivamos el temporizador.
-    m_temporizador.Cancel();
-    // Reenviamos todos los paquetes de la ventana.
-    VenceTemporizador();
-  }
 }
 
 void
-Enlace::DatoRecibido(uint8_t numSecuencia)
+Enlace::DatoRecibido(uint32_t numSecuencia)
 {
-  NS_LOG_FUNCTION (numSecuencia);
+  NS_LOG_FUNCTION ((unsigned int)numSecuencia);
 
   NS_LOG_DEBUG ("Recibido paquete en nodo " << m_node->GetId() << " con "
                 << (unsigned int) numSecuencia);
@@ -108,8 +97,8 @@ Enlace::PaqueteRecibido(Ptr<NetDevice>        receptor,
   // Quitamos la cabecera del paquete y la guardamos en header.
   copia->RemoveHeader (header);
   // Obtenemos el tipo y el numero de secuencia.
-  uint8_t tipo = header.GetTipo();
-  uint8_t numSecuencia = header.GetSecuencia();
+  uint32_t tipo = (uint32_t)header.GetTipo();
+  uint32_t numSecuencia = (uint32_t)header.GetSecuencia();
 
   if (tipo == 0)
   {
@@ -127,15 +116,16 @@ void
 Enlace::VenceTemporizador()
 {
   NS_LOG_FUNCTION_NOARGS ();
-  NS_LOG_DEBUG ("Se ha producido una retransmisión. " 
-    << "Se reenvian los paquetes con numero de secuencia perteneciente al intervalo: ["
-    << (unsigned int) (m_ventIni)%RANGO << "," << (m_ventIni + m_tamTx - 1)%RANGO << "].");
+  //ESTE LOG HAY QUE MODIFICARLO
+  NS_LOG_DEBUG ("Se ha producido una retransmisión. " );
+  //  << "Se reenvian los paquetes con numero de secuencia perteneciente al intervalo: ["
+  //  << (unsigned int) (m_ventIni)%RANGO << "," << (m_ventIni + m_tamTx - 1)%RANGO << "].");
 
-  for (m_tx = m_ventIni; m_tx != m_ventIni + m_tamTx; m_tx++)
-  {
+    //Iniciamos la ventana de transmision.
+    m_ventanaTx.Vacia();
     // Se reenvia un paquete
     EnviaPaqueteDatos();
-  }
+
 }
 
 
@@ -144,29 +134,38 @@ Enlace::EnviaPaqueteDatos()
 {
   NS_LOG_FUNCTION_NOARGS ();
 
-  Ptr<Packet> paquete = Create<Packet> (m_tamPqt);
+  NS_LOG_DEBUG(m_ventanaTx.Credito());
+  while (m_ventanaTx.Credito() > 0)
+  {
+    Ptr<Packet> paquete = Create<Packet> (m_tamPqt);
 
-  //Formamos la cabecera
-  CabEnlace header;
-  header.SetData (0, m_tx);
+    //Obtenemos el numero de secuencia a enviar y
+    //actualizamos el puntero que apunta al siguiente numero de secuencia a enviar.
+    m_tx = m_ventanaTx.Pendiente();
+    //Formamos la cabecera
+    CabEnlace header;
+    header.SetData (0, m_tx);
 
-  //Añadimos la cabecera
-  paquete->AddHeader (header);
+    //Añadimos la cabecera
+    paquete->AddHeader (header);
 
-  // Envío el paquete
-  m_node->GetDevice(0)->Send(paquete, m_disp->GetAddress(), 0x0800);
+    // Envío el paquete
+    m_node->GetDevice(0)->Send(paquete, m_disp->GetAddress(), 0x0800);
 
-  NS_LOG_INFO ("   Solicitado envio de paquete de " << paquete->GetSize () <<
-               " octetos en nodo " << m_node->GetId() <<
-               " con " << (unsigned int) m_tx <<
-               " en " << Simulator::Now());
 
-  //Aumentamos el total de paquetes transmitidos
-  m_totalPqt++;
+    NS_LOG_INFO ("   Solicitado envio de paquete de " << paquete->GetSize () <<
+                 " octetos en nodo " << m_node->GetId() <<
+                 " con " << (unsigned int) m_tx <<
+                 " en " << Simulator::Now());
 
-  // Programo el temporizador si no esta ya en marcha
-  if (m_esperaACK != 0 && m_temporizador.IsRunning() == false)
-    m_temporizador=Simulator::Schedule(m_esperaACK,&Enlace::VenceTemporizador,this);
+    //ESTO ES INNECESARIO
+    //Aumentamos el total de paquetes transmitidos
+    m_totalPqt++;
+
+    // Programo el temporizador si no esta ya en marcha
+    if (m_esperaACK != 0 && m_temporizador.IsRunning() == false)
+        m_temporizador=Simulator::Schedule(m_esperaACK,&Enlace::VenceTemporizador,this);
+  }
 }
 
 void

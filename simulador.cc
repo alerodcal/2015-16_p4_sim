@@ -25,7 +25,7 @@ main (int argc, char *argv[])
   Time     rprop      = Time("4ms");
   DataRate vtx        = DataRate("1000kbps");
   uint8_t  tamVentana = 3;
-  double   perror     = 0.00002;
+  double   perror     = 2e-5;
 
   // Creamos el modelo de error y le asociamos los parametros
   Ptr<UniformRandomVariable> uniforme = CreateObject<UniformRandomVariable>();
@@ -57,7 +57,8 @@ main (int argc, char *argv[])
   Observador observador;
   // Suscribimos la traza de paquetes correctamente asentidos.
   dispositivos.Get (0)->TraceConnectWithoutContext ("MacRx", MakeCallback(&Observador::PaqueteAsentido, &observador));
-  dispositivos.Get (1)->TraceConnectWithoutContext ("PhyRxDrop", MakeCallback(&Observador::PaqueteErroneo, &observador));
+  // Suscribimos la traza de paquetes erroneos.
+  dispositivos.Get (1)->GetObject<PointToPointNetDevice>()->TraceConnectWithoutContext ("PhyRxDrop", MakeCallback(&Observador::PaqueteErroneo, &observador));
 
   // Añadimos cada aplicación a su nodo
   nodos.Get (0)->AddApplication(&transmisor);

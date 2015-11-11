@@ -20,12 +20,12 @@ public:
   Enlace(Ptr<NetDevice>, Time, uint32_t tamPqt, uint8_t tamTx);
 
   // Función para el procesamiento de paquetes recibidos de tipo datos.
-  void DatoRecibido (uint8_t numSecuencia);
+  void DatoRecibido (uint32_t numSecuencia);
 
   // Función para el procesamiento de asentimientos recibidos.
   // Comprueba si el ACK es el adecuado. Si lo es, desactiva el temporizador de
   // retransmisiones, actualiza el valor de la ventana y envía un nuevo paquete.
-  void ACKRecibido(uint8_t numSecuencia);
+  void ACKRecibido(uint32_t numSecuencia);
 
   // Función para el procesamiento de paquetes recibidos
   // Comprueba si el ACK es el adecuado. Si lo es, desactiva el temporizador de
@@ -61,11 +61,10 @@ private:
   // Método que se llama en el instante de comienzo de la aplicación.
   void StartApplication()
   {
-    for (m_tx = m_ventIni; m_tx != m_ventIni + m_tamTx; m_tx++)
-    {
-     // Se reenvia un paquete
-     EnviaPaqueteDatos();
-    }
+    //Inicializamos la aplicacion
+    m_ventanaTx.Vacia();
+    // Se envian paquetes.
+    EnviaPaqueteDatos();
   }
 
   // Método que se llama en el instante de final de la aplicación.
@@ -74,6 +73,11 @@ private:
     Simulator::Stop ();
   }
 
+  //
+  //
+  // QUITAR LAS VARIABLES INUTILES DEBIDO A VENTANA.H
+  //
+  //
   // Dispositivo de red con el que hay que comunicarse.
   Ptr<NetDevice> m_disp;
   // Temporizador de retransmisión
@@ -82,10 +86,10 @@ private:
   uint32_t       m_tamPqt;
   // Número de secuencia de los paquetes a transmitir
   // (V(S) en el estandar)
-  uint8_t        m_tx;
+  uint32_t        m_tx;
   // Número de secuencia de los paquetes a recibir
   // (V(R) en el estandar)
-  uint8_t        m_rx;
+  uint32_t        m_rx;
   // Indica el numero de secuencia inicial de la ventana
   // (V(A) en el estandar)
   uint8_t        m_ventIni;
