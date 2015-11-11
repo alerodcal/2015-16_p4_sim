@@ -61,6 +61,7 @@ private:
   // Método que se llama en el instante de comienzo de la aplicación.
   void StartApplication()
   {
+    m_temporizador=Simulator::Schedule(m_esperaACK,&Enlace::VenceTemporizador,this);
     // ESTE BUCLE SE REALIZA EN EnviaPaqueteDatos()
     //for (m_tx = m_ventIni; m_tx != m_ventIni + m_tamTx; m_tx++)
     //{

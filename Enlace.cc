@@ -16,7 +16,7 @@ Enlace::Enlace(Ptr<NetDevice> disp,
                                  uint32_t       tamPqt,
                                  uint8_t        tamTx)
 {
-  NS_LOG_FUNCTION (disp << espera << tamPqt << tamTx);
+  NS_LOG_FUNCTION (disp << espera << tamPqt << (unsigned int)tamTx);
 
   // Inicializamos las variables privadas
   m_disp      = disp;
@@ -33,7 +33,7 @@ Enlace::Enlace(Ptr<NetDevice> disp,
 void
 Enlace::ACKRecibido(uint8_t numSecuencia)
 {
-  NS_LOG_FUNCTION (numSecuencia);
+  NS_LOG_FUNCTION ((unsigned int)numSecuencia);
 
   NS_LOG_DEBUG ("Recibido ACK en nodo " << m_node->GetId() << " con "
                 << (unsigned int) numSecuencia << ". La ventana es [" 
@@ -77,7 +77,7 @@ Enlace::ACKRecibido(uint8_t numSecuencia)
 void
 Enlace::DatoRecibido(uint8_t numSecuencia)
 {
-  NS_LOG_FUNCTION (numSecuencia);
+  NS_LOG_FUNCTION ((unsigned int)numSecuencia);
 
   NS_LOG_DEBUG ("Recibido paquete en nodo " << m_node->GetId() << " con "
                 << (unsigned int) numSecuencia);
@@ -147,9 +147,10 @@ void
 Enlace::EnviaPaqueteDatos()
 {
   NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_DEBUG((unsigned int)m_tx << " " << (unsigned int)m_ventIni << " " << (unsigned int)m_tamTx << " "<< MODULO);
 
   // Enviamos si tenemos credito.
-  for(; m_tx != m_ventIni + m_tamTx; m_tx++)
+  for(; ((uint32_t)m_tamTx - Offset (m_tx)) > 0; m_tx++)
   {
     Ptr<Packet> paquete = Create<Packet> (m_tamPqt);
 
