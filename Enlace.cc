@@ -41,7 +41,7 @@ Enlace::ACKRecibido(uint8_t numSecuencia)
 
   // Comprobamos si el número de secuencia del ACK se corresponde con
   // el de secuencia del siguiente paquete a transmitir
-  if(Offset (m_tx) >= Offset (numSecuencia)) 
+  if(Offset (m_tx) >= Offset ((numSecuencia-1)%MODULO))
   {
       // Si es correcto desactivo el temporizador
       m_temporizador.Cancel();
