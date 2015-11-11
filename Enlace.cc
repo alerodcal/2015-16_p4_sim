@@ -47,7 +47,7 @@ Enlace::ACKRecibido(uint32_t numSecuencia)
 
   // Comprobamos si el número de secuencia del ACK se corresponde con
   // el de secuencia del siguiente paquete a transmitir
-  if(m_ventanaTx.EnVentana((numSecuencia-1)%RANGO))
+  if(m_ventanaTx.EnVentana(numSecuencia))
   {
       // Si es correcto desactivo el temporizador
       m_temporizador.Cancel();
